@@ -1,4 +1,10 @@
+import path from 'path';
 import swaggerJsdoc from 'swagger-jsdoc';
+
+// Em desenvolvimento (ts-node) __filename termina em .ts; em produção (dist/) termina em .js.
+// Assim o glob aponta para os arquivos corretos em ambos os ambientes.
+const ext = __filename.endsWith('.ts') ? 'ts' : 'js';
+const routesGlob = path.join(__dirname, `../http/routes/*.${ext}`);
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -114,7 +120,7 @@ const options: swaggerJsdoc.Options = {
       },
     },
   },
-  apis: ['./src/interface/http/routes/*.ts'],
+  apis: [routesGlob],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
