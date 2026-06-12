@@ -1,0 +1,58 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: mypizza-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: mypizza_dev
+    ports:
+      - '3306:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-psecret']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: mypizza-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - '8080:80'
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: secret
+
+  api:
+    build:
+      context: .
+      target: production
+    container_name: mypizza-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: mypizza_dev
+      DB_USER: root
+      DB_PASSWORD: secret
+      DB_POOL_MAX: 10
+      DB_POOL_MIN: 2
+    command: >
+      sh -c "npx sequelize-cli db:migrate && node dist/main.js"
+
+volumes:
+  db_data:
